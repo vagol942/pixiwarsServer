@@ -15,7 +15,6 @@ import colors from './colors';
 const app = express();
 const http = Http.Server(app);
 const io = SocketIO(http);
-let gridStream = fs.createWriteStream(path.resolve(__dirname, 'storage', `grid_${Date.now()}.json`));
 
 const FINAL_TIME = Date.UTC(2018, 2, 26);
 //const FINAL_TIME = Date.UTC(2018, 2, 22, 6, 4);
