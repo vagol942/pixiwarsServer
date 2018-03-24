@@ -16,10 +16,12 @@ const app = express();
 const http = Http.Server(app);
 const io = SocketIO(http);
 
-const FINAL_TIME = Date.UTC(2018, 2, 26);
+const FINAL_TIME = Date.UTC(2018, 2, 27, 7);
 //const FINAL_TIME = Date.UTC(2018, 2, 22, 6, 4);
 const COOLDOWN_TIME = 3*60*1000;
 // const COOLDOWN_TIME = 10*1000;
+// We give 30 secs of extra time to account for the twitch latency.
+const FiNAL_TIME_STREAMING_EXTENSION = 30*1000;
 const CHANGE_PIXEL = "CHANGE_PIXEL";
 const PIXEL_IS_ETERNAL = "PIXEL_IS_ETERNAL";
 const PIXEL_CHANGED = "PIXEL_CHANGED";
@@ -105,6 +107,12 @@ MongoClient.connect(url).then((client) => {
             })
     }
 
+    function getPlayerEternals(username) : Promise<number>{
+        return eternalsCollection.findOne({username: username})
+            .then(player => player.eternals)
+            .catch(err => {throw new Error("PLAYER NOT FOUND")});
+    }
+
     // State modifier
     function gameStateModifier(action): Promise<String> {
         switch (action.message) {
@@ -120,7 +128,13 @@ MongoClient.connect(url).then((client) => {
                             if (pixel.canChange == false) {
                                 return eternalsCollection.findOne({ username: pixel.lastPlayer })
                                 .catch(err => NO_ETERNALS)
-                                .then(doc => (doc.eternals && doc.eternals >= 1) ? "OK" : new Error("NO_ETERNALS"))
+                                .then(doc => {
+                                    if (doc.eternals && doc.eternals >= 1) {
+                                        return "OK";
+                                    } else {
+                                        throw new Error("NO_ETERNALS");
+                                    }
+                                })
                                 .then(() => {
                                     // state mutation
                                     gameState.grid[`${pixel.x},${pixel.y}`] = { ...pixel };
@@ -263,7 +277,9 @@ MongoClient.connect(url).then((client) => {
             // twitchClient.whisper(userstate.username, `Hello ${userstate['display-name']}!`);
         }
         if (message === '!eternals') {
-
+            getPlayerEternals(userstate.username)
+            .then(eternals => twitchClient.say(channel, `User ${userstate['display-name']} has ${eternals} eternal pixel(s)`))
+            .catch(err => {});
         }
         if (dotCommandRegEx.test(message)) {
             const messageData = message.match(dotCommandRegEx);
@@ -373,7 +389,9 @@ MongoClient.connect(url).then((client) => {
                 date: data.date,
                 amount: data.amount 
             }
+            // insert new tip
             tipsCollection.insertOne(tip);
+            // Give eternals to user
             if  (tip.amount && tip.currencyCode == 'USD' && tip.amount >= 100) {
                 const eternalsAmount = Math.floor(tip.amount/100);
                 eternalsCollection.updateOne(
@@ -383,6 +401,15 @@ MongoClient.connect(url).then((client) => {
                 )
             }
             console.log(event.data);
+            // send message note
+            if (tip.note && tip.amount && tip.currencyCode == 'USD' && tip.amount >= 10) {
+                io.emit("tipMessage", {
+                    username: tip.username,
+                    message: tip.note,
+                    currencyCode: tip.currencyCode,
+                    amount: tip.amount,
+                })
+            }
         }
     };
 
