@@ -16,12 +16,13 @@ const app = express();
 const http = Http.Server(app);
 const io = SocketIO(http);
 
-const FINAL_TIME = Date.UTC(2018, 2, 27, 7);
+const DEFAULT_FINAL_TIME = Date.UTC(2018, 2, 27, 7);
 //const FINAL_TIME = Date.UTC(2018, 2, 22, 6, 4);
 const COOLDOWN_TIME = 3*60*1000;
 // const COOLDOWN_TIME = 10*1000;
 // We give 30 secs of extra time to account for the twitch latency.
-const FiNAL_TIME_STREAMING_EXTENSION = 30*1000;
+const FINAL_TIME_STREAMING_EXTENSION = 24*1000;
+const FINAL_TIME = DEFAULT_FINAL_TIME + FINAL_TIME_STREAMING_EXTENSION;
 const CHANGE_PIXEL = "CHANGE_PIXEL";
 const PIXEL_IS_ETERNAL = "PIXEL_IS_ETERNAL";
 const PIXEL_CHANGED = "PIXEL_CHANGED";
@@ -212,7 +213,7 @@ MongoClient.connect(url).then((client) => {
     // The events
     const twitchOptions = {
         options: {
-            debug: true,
+            debug: false,
         },
         connection: {
             cluster: "aws",
@@ -266,7 +267,7 @@ MongoClient.connect(url).then((client) => {
     twitchMsgsObserver.concatMap(s => Rx.Observable.from([s]).delay(messageTime)).subscribe(toSay => twitchClient.say(toSay.channel, toSay.message));
 
     twitchClient.on('chat', (channel, userstate, message, self) => {
-        console.log(`[TwitchJS]: Message "${message}" received from ${userstate['display-name']}`);
+        // console.log(`[TwitchJS]: Message "${message}" received from ${userstate['display-name']}`);
 
         if (self) return;
 
@@ -349,13 +350,13 @@ MongoClient.connect(url).then((client) => {
     })
 
     io.on('connection', (socket) => {
-        console.log('[Socket.io]: Client connected.');
+        // console.log('[Socket.io]: Client connected.');
         socket.on('disconnect', () => {
-            console.log('[Socket.io]: Client disconnected!');
+            // console.log('[Socket.io]: Client disconnected!');
         })
         socket.on('getGridData', () => {
-            console.log("[Socket.io]: Sending grid data.");
-            console.log(gameState.grid);
+            // console.log("[Socket.io]: Sending grid data.");
+            // console.log(gameState.grid);
             socket.emit('gridData', { grid: gameState.grid })
         })
     })
