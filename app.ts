@@ -175,7 +175,7 @@ MongoClient.connect(url).then((client) => {
         if (gameState.users[playerName]) {
             if (gameState.users[playerName].lastPlay) {
                 if (Date.now() - gameState.users[playerName].lastPlay <= COOLDOWN_TIME) {
-                    console.log(`TIME SINCE LAST PLAY: ${Date.now() - gameState.users[playerName].lastPlay}`)
+                    // console.log(`TIME SINCE LAST PLAY: ${Date.now() - gameState.users[playerName].lastPlay}`)
                     return true;
                 }
             }
