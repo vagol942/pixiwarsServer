@@ -18,8 +18,8 @@ const io = SocketIO(http);
 
 const DEFAULT_FINAL_TIME = Date.UTC(2018, 3, 1, 7);
 //const FINAL_TIME = Date.UTC(2018, 2, 22, 6, 4);
-const COOLDOWN_TIME = 3*60*1000;
-// const COOLDOWN_TIME = 10*1000;
+// const COOLDOWN_TIME = 3*60*1000;
+const COOLDOWN_TIME = 10*1000;
 // We give 30 secs of extra time to account for the twitch latency.
 const FINAL_TIME_STREAMING_EXTENSION = 24*1000;
 const FINAL_TIME = DEFAULT_FINAL_TIME + FINAL_TIME_STREAMING_EXTENSION;
@@ -259,7 +259,7 @@ MongoClient.connect(url).then((client) => {
 
 
     const MSG_THRESHOLE_AMOUNT = 98;
-    const MSG_THRESHOLE_TIME = 32;
+    const MSG_THRESHOLE_TIME = 40;
 
     const messageTime = MSG_THRESHOLE_TIME/MSG_THRESHOLE_AMOUNT;
 
