@@ -16,7 +16,7 @@ const app = express();
 const http = Http.Server(app);
 const io = SocketIO(http);
 
-const DEFAULT_FINAL_TIME = Date.UTC(2018, 2, 26, 7);
+const DEFAULT_FINAL_TIME = Date.UTC(2018, 3, 1, 7);
 //const FINAL_TIME = Date.UTC(2018, 2, 22, 6, 4);
 const COOLDOWN_TIME = 3*60*1000;
 // const COOLDOWN_TIME = 10*1000;
