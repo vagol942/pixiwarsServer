@@ -123,7 +123,7 @@ MongoClient.connect(url).then((client) => {
                     if (!playerOnCoolDown(pixel.lastPlayer)) {
                     // if (true) {
                         if (gameState.grid[`${pixel.x},${pixel.y}`] && gameState.grid[`${pixel.x},${pixel.y}`].canChange == false) {
-                            return new Promise((res, rej) => PIXEL_IS_ETERNAL);
+                            return new Promise((res, rej) => res(PIXEL_IS_ETERNAL));
                         } else {
                             // check for eternal pixel
                             if (pixel.canChange == false) {
@@ -159,7 +159,7 @@ MongoClient.connect(url).then((client) => {
                                 updateGridPixel(pixel.x, pixel.y, pixel.color, pixel.lastPlayer, pixel.canChange);
                                 addAction(new Action(pixel.lastPlayer, new GameDot(pixel.x, pixel.y, pixel.color), Date.now()));
                                 // end effects
-                                return new Promise((res, rej) => PIXEL_CHANGED);
+                                return new Promise((res, rej) => res(PIXEL_CHANGED));
                             }
                         }
                     } else {
@@ -261,7 +261,7 @@ MongoClient.connect(url).then((client) => {
     const MSG_THRESHOLE_AMOUNT = 98;
     const MSG_THRESHOLE_TIME = 40;
 
-    const messageTime = MSG_THRESHOLE_TIME/MSG_THRESHOLE_AMOUNT;
+    const messageTime = (MSG_THRESHOLE_TIME/MSG_THRESHOLE_AMOUNT) * 1000;
 
     const twitchMsgsObserver = new Rx.Subject();
     twitchMsgsObserver.concatMap(s => Rx.Observable.from([s]).delay(messageTime)).subscribe(toSay => twitchClient.say(toSay.channel, toSay.message));
@@ -279,7 +279,8 @@ MongoClient.connect(url).then((client) => {
         }
         if (message === '!eternals') {
             getPlayerEternals(userstate.username)
-            .then(eternals => twitchClient.say(channel, `User ${userstate['display-name']} has ${eternals} eternal pixel(s)`))
+            .then(eternals => twitchMsgsObserver.next({channel: channel, message: `User ${userstate['display-name']} has ${eternals} eternal pixel(s)`}))
+            // .then(eternals => twitchClient.say(channel, `User ${userstate['display-name']} has ${eternals} eternal pixel(s)`))
             .catch(err => {});
         }
         if (dotCommandRegEx.test(message)) {
@@ -297,6 +298,7 @@ MongoClient.connect(url).then((client) => {
                     if (result === PIXEL_CHANGED) {
                         // twitchClient.whisper(userstate.username ,`You changed the pixel (${dot.x}, ${dot.y}) to ${messageData[3]}!!`);
                         twitchMsgsObserver.next({channel: channel, message: `${ userstate['display-name'] } changed the pixel (${dot.x}, ${dot.y}) to ${messageData[3]}!!`});
+                        // twitchClient.say(channel, `${ userstate['display-name'] } changed the pixel (${dot.x}, ${dot.y}) to ${messageData[3]}!!`);
                     } else if (result === PIXEL_IS_ETERNAL) {
                         // twitchClient.whisper(userstate.username, `The pixel (${dot.x},${dot.y}) cannot be changed, it was eternally set by user ${gameState.grid[dot.x][dot.y].lastPlayer}!`)
                     } else if (result === USER_COOLDOWN) {
@@ -325,11 +327,13 @@ MongoClient.connect(url).then((client) => {
                 const resultPromise = gameStateModifier(action);
                 resultPromise.then(result => {
                     if (result === PIXEL_CHANGED) {
-                        twitchClient.say(channel,`${userstate['display-name']} set pixel (${dot.x}, ${dot.y}) to ${messageData[3]} ETERNALLY!!`);
+                        //twitchClient.say(channel,`${userstate['display-name']} set pixel (${dot.x}, ${dot.y}) to ${messageData[3]} ETERNALLY!!`);
+                        twitchMsgsObserver.next({channel: channel, message: `${userstate['display-name']} set pixel (${dot.x}, ${dot.y}) to ${messageData[3]} ETERNALLY!!`});
                         // console.log("ETERNAL PIXEL SET!");
                         // twitchClient.say(channel, `ETERNALLLLL POWWWAAAA!`);
                     } else if (result === PIXEL_IS_ETERNAL) {
-                        twitchClient.say(channel, `The pixel (${dot.x},${dot.y}) cannot be changed, it was eternally set by user ${gameState.grid[dot.x][dot.y].lastPlayer}!`)
+                        // twitchClient.say(channel, `The pixel (${dot.x},${dot.y}) cannot be changed, it was eternally set by user ${gameState.grid[`${dot.x},${dot.y}`].lastPlayer}!`)
+                        twitchMsgsObserver.next({channel: channel, message: `The pixel (${dot.x},${dot.y}) cannot be changed, it was eternally set by user ${gameState.grid[`${dot.x},${dot.y}`].lastPlayer}!`});
                     }
                 })
             }
